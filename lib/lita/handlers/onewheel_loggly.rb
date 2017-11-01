@@ -31,7 +31,7 @@ module Lita
         Lita.logger.debug uri
         resp = RestClient.get uri, auth_header
 
-        alerts = {}
+        alerts = Hash.new {|h, k| h[k] = 0}
 
         events = JSON.parse resp.body
         alerts = process_event(events, alerts)
@@ -50,7 +50,7 @@ module Lita
         Lita.logger.debug "#{events_count} events"
         response.reply "#{events_count} events"
 
-        alerts = alerts.sort_by { |k, v| -v }
+        alerts = alerts.sort_by { |_k, v| -v }
         alerts.each do |key, count|
           Lita.logger.debug "Counted #{count}: #{key}"
           response.reply "Counted #{count}: #{key}"
@@ -63,44 +63,47 @@ module Lita
           msg = JSON.parse event['logmsg']
           message = msg['message']
           if md = /(fault=[a-zA-Z0-9.-]+)/.match(message)
-            alerts[md[0]] = init_or_increment alerts[md[0]]
+            alerts[md[0]] += 1
           elsif /KeyError/.match(message)
             idx = message.index('KeyError')
             salient = message[idx - 120, 150]
             salient.gsub! /\\n - \w+/, ''
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif /IndexError/.match(message)
             idx = message.index('IndexError')
             salient = message[idx - 120, 150]
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif /NoneType/.match(message)
             idx = message.index('NoneType')
             salient = message[idx - 120, 150]
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(urllib3\.exceptions\.ProtocolError: \('Connection aborted\.', ConnectionResetError\(104, 'Connection reset by peer'\)\))/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(http\.client\.RemoteDisconnected: Remote end closed connection without response)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
             salient = md[0]
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(requests.exceptions.TooManyRedirects: Exceeded 30 redirects.)/.match(message)
             salient = md[0]
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(raise JSONDecodeError\("Expecting value", s, err.value\) from None)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(Got a cookie string but could not extract cookies.)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
           elsif md = /(requests.exceptions.ConnectTimeout.*Connection to shop.lululemon.com timed out.)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = init_or_increment alerts[salient]
+            alerts[salient] += 1
+          elsif md = /(requests.exceptions.ReadTimeout.*read timeout=\d+\))/.match(message)
+            salient = "Unhandled #{md[0]}"
+            alerts[salient] += 1
           else
             md = /(x-amzn-requestid=[\w-]+)/.match(message)
             salient = message.gsub /\\n/, "\n"
@@ -110,10 +113,6 @@ module Lita
           end
         end
         alerts
-      end
-
-      def init_or_increment(thing)
-        thing.to_i + 1
       end
 
       Lita.register_handler(self)
