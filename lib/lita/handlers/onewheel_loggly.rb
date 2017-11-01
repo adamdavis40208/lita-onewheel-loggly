@@ -29,7 +29,11 @@ module Lita
         sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
         uri = "#{config.base_uri}#{sample_query}"
         Lita.logger.debug uri
-        resp = RestClient.get uri, auth_header
+        begin
+          resp = RestClient.get uri, auth_header
+        rescue Timeout => timeout_exception
+          response.reply "Timeout: #{timeout_exception}"
+        end
 
         alerts = Hash.new {|h, k| h[k] = 0}
 
