@@ -92,7 +92,7 @@ module Lita
           elsif md = /(requests.exceptions.TooManyRedirects: Exceeded 30 redirects.)/.match(message)
             salient = md[0]
             alerts[salient] = init_or_increment alerts[salient]
-          elsif md = /(raise JSONDecodeError("Expecting value", s, err.value) from None)/.match(message)
+          elsif md = /(raise JSONDecodeError\("Expecting value", s, err.value\) from None)/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           else
