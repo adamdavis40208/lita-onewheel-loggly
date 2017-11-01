@@ -33,6 +33,7 @@ module Lita
           resp = RestClient.get uri, auth_header
         rescue Exception => timeout_exception
           response.reply "Error: #{timeout_exception}"
+          return
         end
 
         alerts = Hash.new { |h, k| h[k] = 0 }
