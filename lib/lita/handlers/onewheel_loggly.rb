@@ -95,6 +95,12 @@ module Lita
           elsif md = /(raise JSONDecodeError\("Expecting value", s, err.value\) from None)/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
+          elsif md = /(Got a cookie string but could not extract cookies.)/.match(message)
+            salient = "Unhandled #{md[0]}"
+            alerts[salient] = init_or_increment alerts[salient]
+          elsif md = /(requests.exceptions.ConnectTimeout.*Connection to shop.lululemon.com timed out.)/.match(message)
+            salient = "Unhandled #{md[0]}"
+            alerts[salient] = init_or_increment alerts[salient]
           else
             md = /(x-amzn-requestid=[\w-]+)/.match(message)
             salient = message.gsub /\\n/, "\n"
