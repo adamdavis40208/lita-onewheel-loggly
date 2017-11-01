@@ -25,7 +25,7 @@ module Lita
           end
         end
 
-        response.reply "Gathering events from #{from_time}"
+        response.reply "Gathering events from #{from_time}..."
         sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until="
         uri = "#{config.base_uri}#{sample_query}"
         Lita.logger.debug uri
@@ -87,10 +87,13 @@ module Lita
             salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
-            salient = "#{md[0]}"
+            salient = md[0]
             alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(requests.exceptions.TooManyRedirects: Exceeded 30 redirects.)/.match(message)
-            salient = "#{md[0]}"
+            salient = md[0]
+            alerts[salient] = init_or_increment alerts[salient]
+          elsif md = /(raise JSONDecodeError("Expecting value", s, err.value) from None)/.match(message)
+            salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           else
             md = /(x-amzn-requestid=[\w-]+)/.match(message)
