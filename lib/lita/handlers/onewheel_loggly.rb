@@ -35,12 +35,14 @@ module Lita
         events = JSON.parse resp.body
         alerts = process_event(events, alerts)
         events_count = events.count
+        Lita.logger.debug "events_count = #{events_count}"
 
         while events['next'] do
           Lita.logger.debug "Getting next #{events['next']}"
           resp = RestClient.get events['next'], auth_header
           events = JSON.parse resp.body
           events_count += events.count
+          Lita.logger.debug "events_count = #{events_count}"
           alerts = process_event(events, alerts)
         end
 
@@ -59,40 +61,33 @@ module Lita
           msg = JSON.parse event['logmsg']
           message = msg['message']
           if md = /(fault=[a-zA-Z0-9.-]+)/.match(message)
-            alerts[md[0]] = init_or_increment(alerts[md[0]])
+            alerts[md[0]] = init_or_increment alerts[md[0]]
           elsif /KeyError/.match(message)
             idx = message.index('KeyError')
             salient = message[idx - 120, 150]
             salient.gsub! /\\n - \w+/, ''
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           elsif /IndexError/.match(message)
             idx = message.index('IndexError')
             salient = message[idx - 120, 150]
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(urllib3\.exceptions\.ProtocolError: \('Connection aborted\.', ConnectionResetError\(104, 'Connection reset by peer'\)\))/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(http\.client\.RemoteDisconnected: Remote end closed connection without response)/.match(message)
             salient = "Unhandled #{md[0]}"
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
             salient = "#{md[0]}"
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           else
             salient = message.gsub /\\n/, "\n"
             Lita.logger.debug salient
             salient = 'unknown'
-            alerts[salient] = 0 unless alerts[salient]
-            alerts[salient] += 1
+            alerts[salient] = init_or_increment alerts[salient]
           end
         end
         alerts
