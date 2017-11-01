@@ -84,10 +84,11 @@ module Lita
             salient = "#{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           else
+            md = /(x-amzn-requestid=[\w-]+)/.match(message)
             salient = message.gsub /\\n/, "\n"
-            Lita.logger.debug salient
-            salient = 'unknown'
-            alerts[salient] = init_or_increment alerts[salient]
+            Lita.logger.debug "UNKNOWN #{salient}"
+
+            alerts["Unknown #{md[0]}"] = 1
           end
         end
         alerts
