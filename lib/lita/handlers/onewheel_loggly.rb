@@ -33,7 +33,7 @@ module Lita
         alerts = {}
 
         events = JSON.parse resp.body
-        alerts = process_event(events).merge(alerts)
+        alerts = process_event(events)
 
         Lita.logger.debug "#{events['events'].count} events"
         response.reply "#{events['events'].count} events"
@@ -84,7 +84,9 @@ module Lita
             alerts[salient] += 1
           end
         end
+        alerts
       end
+
       Lita.register_handler(self)
     end
   end
