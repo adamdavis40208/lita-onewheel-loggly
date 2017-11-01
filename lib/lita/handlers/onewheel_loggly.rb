@@ -20,7 +20,7 @@ module Lita
         if /\d+/.match response.matches[0][0]
           Lita.logger.debug "Suspected time: #{response.matches[0][0]}"
           from_time = response.matches[0][0]
-          if from_time[0] == '-'
+          unless from_time[0] == '-'
             from_time = "-#{from_time}"
           end
         end
