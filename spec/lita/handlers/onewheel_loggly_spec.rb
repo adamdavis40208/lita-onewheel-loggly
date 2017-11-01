@@ -2,7 +2,9 @@ require 'spec_helper'
 
 def mock_it_up(file)
   mock_result_json = File.open("spec/fixtures/#{file}.json").read
-  allow(RestClient).to receive(:get).and_return({body: mock_result_json})
+  response = {}
+  allow(response).to receive(:body).and_return(mock_result_json)
+  allow(RestClient).to receive(:get).and_return(response)
 end
 
 describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
@@ -22,6 +24,6 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_it_up('mock_result')
 
     send_command 'logs 10m'
-    expect(replies.last).to eq('https://s-media-cache-ak0.pinimg.com/736x/4a/43/a4/4a43a4b6569cf8a197b6c9217de3f412.jpg')
+    expect(replies.last).to eq('Counted 1: Unhandled http.client.RemoteDisconnected: Remote end closed connection without response')
   end
 end
