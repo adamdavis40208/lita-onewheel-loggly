@@ -59,8 +59,7 @@ module Lita
           msg = JSON.parse event['logmsg']
           message = msg['message']
           if md = /(fault=[a-zA-Z0-9.-]+)/.match(message)
-            alerts[md[0]] = 0 unless alerts[md[0]]
-            alerts[md[0]] += 1
+            alerts[md[0]] = init_or_increment(alerts[md[0]])
           elsif /KeyError/.match(message)
             idx = message.index('KeyError')
             salient = message[idx - 120, 150]
@@ -84,6 +83,10 @@ module Lita
             salient = "Unhandled #{md[0]}"
             alerts[salient] = 0 unless alerts[salient]
             alerts[salient] += 1
+          elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
+            salient = "#{md[0]}"
+            alerts[salient] = 0 unless alerts[salient]
+            alerts[salient] += 1
           else
             salient = message.gsub /\\n/, "\n"
             Lita.logger.debug salient
@@ -93,6 +96,14 @@ module Lita
           end
         end
         alerts
+      end
+
+      def init_or_increment(thing)
+        if thing == nil
+          0
+        else
+          thing += 1
+        end
       end
 
       Lita.register_handler(self)
