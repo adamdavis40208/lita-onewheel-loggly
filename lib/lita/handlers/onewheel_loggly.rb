@@ -8,7 +8,7 @@ module Lita
       config :base_uri, required: true
       config :query, required: true
 
-      route /^logs\s+(\w+)$/i, :logs, command: true
+      route /^logs\s+([\w-]+)$/i, :logs, command: true
       route /^logs$/i, :logs, command: true
 
       def logs(response)
@@ -33,7 +33,20 @@ module Lita
         alerts = {}
 
         events = JSON.parse resp.body
+        alerts = process_event(events).merge(alerts)
 
+        Lita.logger.debug "#{events['events'].count} events"
+        response.reply "#{events['events'].count} events"
+
+        alerts.each do |key, count|
+          Lita.logger.debug "Counted #{count}: #{key}"
+          response.reply "Counted #{count}: #{key}"
+        end
+
+      end
+
+      def process_event(events)
+        alerts = {}
         events['events'].each do |event|
           msg = JSON.parse event['logmsg']
           message = msg['message']
@@ -71,17 +84,7 @@ module Lita
             alerts[salient] += 1
           end
         end
-
-        Lita.logger.debug "#{events['events'].count} events"
-        response.reply "#{events['events'].count} events"
-
-        alerts.each do |key, count|
-          Lita.logger.debug "Counted #{count}: #{key}"
-          response.reply "Counted #{count}: #{key}"
-        end
-
       end
-
       Lita.register_handler(self)
     end
   end

@@ -6,7 +6,7 @@ SimpleCov.formatters = [
 ]
 SimpleCov.start { add_filter '/spec/' }
 
-require 'lita-onewheel-images'
+require 'lita-onewheel-loggly'
 require 'lita/rspec'
 
 # A compatibility mode is provided for older plugins upgrading from Lita 3. Since this plugin
