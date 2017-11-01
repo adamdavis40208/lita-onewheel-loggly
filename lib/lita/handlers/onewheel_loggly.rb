@@ -26,7 +26,7 @@ module Lita
         end
 
         response.reply "Gathering events from #{from_time}..."
-        sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until="
+        sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
         uri = "#{config.base_uri}#{sample_query}"
         Lita.logger.debug uri
         resp = RestClient.get uri, auth_header
