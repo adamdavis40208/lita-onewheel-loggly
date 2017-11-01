@@ -17,7 +17,8 @@ module Lita
         #   last_10_events_query = "/iterate?q=*&from=-10m&until=now&size=10"
 
         from_time = '-10m'
-        if response.matches[0][0]
+        if /\d+/.match response.matches[0][0]
+          Lita.logger.debug "Suspected time: #{response.matches[0][0]}"
           from_time = response.matches[0][0]
           if from_time[0] == '-'
             from_time = "-#{from_time}"
