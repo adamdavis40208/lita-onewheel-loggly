@@ -71,6 +71,10 @@ module Lita
             idx = message.index('IndexError')
             salient = message[idx - 120, 150]
             alerts[salient] = init_or_increment alerts[salient]
+          elsif /NoneType/.match(message)
+            idx = message.index('NoneType')
+            salient = message[idx - 120, 150]
+            alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
@@ -81,6 +85,9 @@ module Lita
             salient = "Unhandled #{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
+            salient = "#{md[0]}"
+            alerts[salient] = init_or_increment alerts[salient]
+          elsif md = /(requests.exceptions.TooManyRedirects: Exceeded 30 redirects.)/.match(message)
             salient = "#{md[0]}"
             alerts[salient] = init_or_increment alerts[salient]
           else
