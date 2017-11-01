@@ -1,10 +1,20 @@
 require 'spec_helper'
 
 def mock_it_up(file)
-  mock_result_json = File.open("spec/fixtures/#{file}.json").read
+  mock_result = File.open("spec/fixtures/mock_result.json").read
+  next_mock_result = File.open("spec/fixtures/mock_next_result.json").read
+
+  auth_header = {'Authorization': 'bearer xyz'}
+  uri = '/iterate?q=&from=-10m&until=&size=1000'
+  next_uri = 'https://lululemon.loggly.com/apiv2/events/iterate?next=9cb4b38a-37d7-43d3-ad79-063cf2d1c43c'
+
   response = {}
-  allow(response).to receive(:body).and_return(mock_result_json)
-  allow(RestClient).to receive(:get).and_return(response)
+  allow(response).to receive(:body).and_return(mock_result)
+  next_response = {}
+  allow(next_response).to receive(:body).and_return(next_mock_result)
+
+  allow(RestClient).to receive(:get).with(uri, auth_header).and_return(response)
+  allow(RestClient).to receive(:get).with(next_uri, auth_header).and_return(next_response)
 end
 
 describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
