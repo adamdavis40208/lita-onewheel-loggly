@@ -99,11 +99,7 @@ module Lita
       end
 
       def init_or_increment(thing)
-        if thing == nil
-          0
-        else
-          thing += 1
-        end
+        thing.to_i + 1
       end
 
       Lita.register_handler(self)
