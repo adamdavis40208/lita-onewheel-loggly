@@ -31,11 +31,11 @@ module Lita
         Lita.logger.debug uri
         begin
           resp = RestClient.get uri, auth_header
-        rescue Timeout => timeout_exception
-          response.reply "Timeout: #{timeout_exception}"
+        rescue Exception => timeout_exception
+          response.reply "Error: #{timeout_exception}"
         end
 
-        alerts = Hash.new {|h, k| h[k] = 0}
+        alerts = Hash.new { |h, k| h[k] = 0 }
 
         events = JSON.parse resp.body
         alerts = process_event(events, alerts)
