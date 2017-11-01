@@ -33,11 +33,13 @@ module Lita
         alerts = {}
 
         events = JSON.parse resp.body
-        alerts = process_event(events)
+        alerts = process_event(events, alerts)
+
         while events['next'] do
-          resp = RestClient.get uri, auth_header
+          Lita.logger.debug "Getting next #{events['next']}"
+          resp = RestClient.get events['next'], auth_header
           next_event = JSON.parse resp.body
-          alerts = process_event(next_event).merge(alerts)
+          alerts = process_event(next_event, alerts)
         end
 
         Lita.logger.debug "#{events['events'].count} events"
@@ -50,8 +52,7 @@ module Lita
 
       end
 
-      def process_event(events)
-        alerts = {}
+      def process_event(events, alerts)
         events['events'].each do |event|
           msg = JSON.parse event['logmsg']
           message = msg['message']
