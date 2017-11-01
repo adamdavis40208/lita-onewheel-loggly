@@ -8,7 +8,8 @@ module Lita
       config :base_uri, required: true
       config :query, required: true
 
-      route /^logs\s*(\w+)$/i, :logs, command: true
+      route /^logs\s+(\w+)$/i, :logs, command: true
+      route /^logs$/i, :logs, command: true
 
       def logs(response)
         auth_header = {'Authorization': "bearer #{config.api_key}"}
@@ -18,7 +19,9 @@ module Lita
         from_time = '-10m'
         if response.matches[0][0]
           from_time = response.matches[0][0]
-          unless from_time[0] == '-' from_time = "-#{from_time}"
+          if from_time[0] == '-'
+            from_time = "-#{from_time}"
+          end
         end
 
         sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until="
