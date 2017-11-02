@@ -85,7 +85,7 @@ module Lita
             salient = message[idx - 120, 150]
             alerts[salient] += 1
           elsif /SSLError/.match(message)
-            idx = message.index('NoneType')
+            idx = message.index('SSLError')
             salient = message[idx - 120, 170]
             alerts[salient] += 1
           elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
