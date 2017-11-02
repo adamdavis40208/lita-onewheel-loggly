@@ -111,6 +111,8 @@ module Lita
           elsif md = /(requests.exceptions.ReadTimeout.*read timeout=\d+\))/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] += 1
+          elsif /SSLError/.match(message)
+            alerts['SSLError'] += 1
           else
             md = /(x-amzn-requestid=[\w-]+)/.match(message)
             salient = message.gsub /\\n/, "\n"
