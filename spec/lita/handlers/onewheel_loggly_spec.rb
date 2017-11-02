@@ -34,6 +34,6 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_it_up('mock_result')
 
     send_command 'logs 10m'
-    expect(replies.last).to eq('Counted 1: Unhandled http.client.RemoteDisconnected: Remote end closed connection without response')
+    expect(replies.last).to include('Counted 23: fault=call.atg.resp')
   end
 end
