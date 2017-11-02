@@ -84,6 +84,10 @@ module Lita
             idx = message.index('NoneType')
             salient = message[idx - 120, 150]
             alerts[salient] += 1
+          elsif /SSLError/.match(message)
+            idx = message.index('NoneType')
+            salient = message[idx - 120, 170]
+            alerts[salient] += 1
           elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] += 1
@@ -111,8 +115,6 @@ module Lita
           elsif md = /(requests.exceptions.ReadTimeout.*read timeout=\d+\))/.match(message)
             salient = "Unhandled #{md[0]}"
             alerts[salient] += 1
-          elsif /SSLError/.match(message)
-            alerts['SSLError'] += 1
           else
             md = /(x-amzn-requestid=[\w-]+)/.match(message)
             salient = message.gsub /\\n/, "\n"
