@@ -10,6 +10,7 @@ module Lita
 
       route /^logs\s+([\w-]+)$/i, :logs, command: true
       route /^logs$/i, :logs, command: true
+      route /^oneoff$/i, :oneoff, command: true
 
       def logs(response)
         auth_header = {'Authorization': "bearer #{config.api_key}"}
@@ -29,6 +30,61 @@ module Lita
         sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
         uri = "#{config.base_uri}#{sample_query}"
         Lita.logger.debug uri
+        begin
+          resp = RestClient.get uri, auth_header
+        rescue Exception => timeout_exception
+          response.reply "Error: #{timeout_exception}"
+          return
+        end
+
+        alerts = Hash.new { |h, k| h[k] = 0 }
+
+        events = JSON.parse resp.body
+        alerts = process_event(events, alerts)
+        events_count = events['events'].count
+        Lita.logger.debug "events_count = #{events_count}"
+
+        while events['next'] do
+          Lita.logger.debug "Getting next #{events['next']}"
+          resp = RestClient.get events['next'], auth_header
+          events = JSON.parse resp.body
+          events_count += events['events'].count
+          Lita.logger.debug "events_count = #{events_count}"
+          alerts = process_event(events, alerts)
+        end
+
+        Lita.logger.debug "#{events_count} events"
+        response.reply "#{events_count} events"
+
+        replies = ''
+        alerts = alerts.sort_by { |_k, v| -v }
+        alerts.each do |key, count|
+          Lita.logger.debug "Counted #{count}: #{key}"
+          replies += "Counted #{count}: #{key}\n"
+        end
+
+        response.reply "```#{replies}```"
+      end
+
+      def oneoff(response)
+        auth_header = {'Authorization': "bearer #{config.api_key}"}
+
+        #   last_10_events_query = "/iterate?q=*&from=-10m&until=now&size=10"
+
+        from_time = '-10m'
+        if /\d+/.match response.matches[0][0]
+          Lita.logger.debug "Suspected time: #{response.matches[0][0]}"
+          from_time = response.matches[0][0]
+          unless from_time[0] == '-'
+            from_time = "-#{from_time}"
+          end
+        end
+
+        query = '"translation--prod-" "status=404" -"return to FE"'
+        sample_query = "/iterate?q=#{CGI::escape query}&from=2017-11-02T10:00:00Z&until=2017-11-03T16:00:00Z&size=1000"
+        uri = "#{config.base_uri}#{sample_query}"
+        Lita.logger.debug uri
+
         begin
           resp = RestClient.get uri, auth_header
         rescue Exception => timeout_exception
