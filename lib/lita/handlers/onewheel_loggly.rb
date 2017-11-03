@@ -69,17 +69,6 @@ module Lita
       def oneoff(response)
         auth_header = {'Authorization': "bearer #{config.api_key}"}
 
-        #   last_10_events_query = "/iterate?q=*&from=-10m&until=now&size=10"
-
-        from_time = '-10m'
-        if /\d+/.match response.matches[0][0]
-          Lita.logger.debug "Suspected time: #{response.matches[0][0]}"
-          from_time = response.matches[0][0]
-          unless from_time[0] == '-'
-            from_time = "-#{from_time}"
-          end
-        end
-
         query = '"translation--prod-" "status=404" -"return to FE"'
         sample_query = "/iterate?q=#{CGI::escape query}&from=2017-11-02T10:00:00Z&until=2017-11-03T16:00:00Z&size=1000"
         uri = "#{config.base_uri}#{sample_query}"
@@ -94,10 +83,12 @@ module Lita
 
         alerts = Hash.new { |h, k| h[k] = 0 }
 
+        master_events = []
         events = JSON.parse resp.body
-        alerts = process_event(events, alerts)
+        # alerts = process_event(events, alerts)
         events_count = events['events'].count
         Lita.logger.debug "events_count = #{events_count}"
+        master_events.push events['events']
 
         while events['next'] do
           Lita.logger.debug "Getting next #{events['next']}"
@@ -105,18 +96,21 @@ module Lita
           events = JSON.parse resp.body
           events_count += events['events'].count
           Lita.logger.debug "events_count = #{events_count}"
-          alerts = process_event(events, alerts)
+          master_events.push events['events']
+          # alerts = process_event(events, alerts)
         end
 
         Lita.logger.debug "#{events_count} events"
         response.reply "#{events_count} events"
+        Lita.logger.debug "#{master_events.count} events"
+        response.reply "#{master_events.count} events"
 
-        replies = ''
-        alerts = alerts.sort_by { |_k, v| -v }
-        alerts.each do |key, count|
-          Lita.logger.debug "Counted #{count}: #{key}"
-          replies += "Counted #{count}: #{key}\n"
-        end
+        # replies = ''
+        # alerts = alerts.sort_by { |_k, v| -v }
+        # alerts.each do |key, count|
+        #   Lita.logger.debug "Counted #{count}: #{key}"
+        #   replies += "Counted #{count}: #{key}\n"
+        # end
 
         response.reply "```#{replies}```"
       end
