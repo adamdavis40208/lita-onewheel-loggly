@@ -11,6 +11,7 @@ module Lita
       route /^logs\s+([\w-]+)$/i, :logs, command: true
       route /^logs$/i, :logs, command: true
       route /^oneoff$/i, :oneoff, command: true
+      route /^oneoffendeca$/i, :oneoff_endeca, command: true
 
       def logs(response)
         auth_header = {'Authorization': "bearer #{config.api_key}"}
@@ -132,6 +133,73 @@ module Lita
 
         file.close
         response.reply "oneoff_report.csv created."
+      end
+
+      def oneoff_endeca(response)
+        auth_header = {'Authorization': "bearer #{config.api_key}"}
+
+        query = 'json.level:ERROR  ("call.endeca.malformed-resp-payload")'
+        sample_query = "/iterate?q=#{CGI::escape query}&from=-12h&until=&size=1000"
+        uri = "#{config.base_uri}#{sample_query}"
+        Lita.logger.debug uri
+
+        begin
+          resp = RestClient.get uri, auth_header
+        rescue Exception => timeout_exception
+          response.reply "Error: #{timeout_exception}"
+          return
+        end
+
+        alerts = Hash.new { |h, k| h[k] = 0 }
+
+        master_events = []
+        events = JSON.parse resp.body
+        # alerts = process_event(events, alerts)
+        events_count = events['events'].count
+        Lita.logger.debug "events_count = #{events_count}"
+
+        events['events'].each do |eve|
+          master_events.push eve['event']['json']['message']
+        end
+
+        while events['next'] do
+          Lita.logger.debug "Getting next #{events['next']}"
+          resp = RestClient.get events['next'], auth_header
+          events = JSON.parse resp.body
+          events['events'].each do |eve|
+            master_events.push eve['event']['json']['message']
+          end
+          # alerts = process_event(events, alerts)
+        end
+
+        Lita.logger.debug "#{events_count} events"
+        response.reply "#{events_count} events"
+        Lita.logger.debug "#{master_events.count} events"
+        response.reply "#{master_events.count} events"
+
+        url_list = []
+        master_events.each do |message|
+          if md = /,\s+req_url=([^,]+),/.match(message)
+            Lita.logger.debug md.captures[0]
+            url_list.push md.captures[0]
+          end
+        end
+
+        url_list.each do |url|
+          alerts[url] += 1
+        end
+
+        file = File.open("oneoff_endeca_report.csv", "w")
+        # replies = ''
+        alerts = alerts.sort_by { |_k, v| -v }
+        alerts.each do |key, count|
+          # Lita.logger.debug "Counted #{count}: #{key}"
+          # replies += "Counted #{count}: #{key}\n"
+          file.write("#{count},#{key}\n")
+        end
+
+        file.close
+        response.reply "oneoff_endeca_report.csv created."
       end
 
       def process_event(events, alerts)
