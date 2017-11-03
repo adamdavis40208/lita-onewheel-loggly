@@ -90,20 +90,28 @@ module Lita
         Lita.logger.debug "events_count = #{events_count}"
         master_events.push events['events']
 
-        while events['next'] do
-          Lita.logger.debug "Getting next #{events['next']}"
-          resp = RestClient.get events['next'], auth_header
-          events = JSON.parse resp.body
-          events_count += events['events'].count
-          Lita.logger.debug "events_count = #{events_count}"
-          master_events.push events['events']
-          # alerts = process_event(events, alerts)
-        end
+        # while events['next'] do
+        #   Lita.logger.debug "Getting next #{events['next']}"
+        #   resp = RestClient.get events['next'], auth_header
+        #   events = JSON.parse resp.body
+        #   events_count += events['events'].count
+        #   Lita.logger.debug "events_count = #{events_count}"
+        #   master_events.push events['events']
+        #   # alerts = process_event(events, alerts)
+        # end
 
         Lita.logger.debug "#{events_count} events"
         response.reply "#{events_count} events"
         Lita.logger.debug "#{master_events.count} events"
         response.reply "#{master_events.count} events"
+
+        master_events.each do |event|
+          msg = JSON.parse event['logmsg']
+          message = msg['message']
+          if md = /.*, url=([^,]+),.*/.match(message)
+            Lita.logger.debug md[0]
+          end
+        end
 
         # replies = ''
         # alerts = alerts.sort_by { |_k, v| -v }
