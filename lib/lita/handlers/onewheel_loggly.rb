@@ -127,7 +127,7 @@ module Lita
         alerts.each do |key, count|
           # Lita.logger.debug "Counted #{count}: #{key}"
           # replies += "Counted #{count}: #{key}\n"
-          file.write("#{count},#{key}")
+          file.write("#{count},#{key}\n")
         end
 
         file.close
