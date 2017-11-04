@@ -72,6 +72,7 @@ module Lita
         rsid = rsid_response['rsid']['id']
 
         events = call_loggly("http://lululemon.loggly.com/apiv2/events?rsid=#{rsid}")
+        Lita.logger.debug "Total requests count: #{events['total_events']}"
         events['total_events']
       end
 
