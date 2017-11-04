@@ -51,4 +51,11 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     send_command 'logs'
     expect(replies[1]).to include('53137 requests')
   end
+
+  it 'checks the events percentage' do
+    mock_main_logs_command
+
+    send_command 'logs 10m'
+    expect(replies.last).to include('58 events (0.109%)')
+  end
 end
