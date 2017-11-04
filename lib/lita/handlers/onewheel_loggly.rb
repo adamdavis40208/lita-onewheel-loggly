@@ -44,10 +44,10 @@ module Lita
         replies = "#{total_request_count} requests\n#{events_count} events (#{events_as_percentage}%)\n\n"
         alerts = alerts.sort_by { |_k, v| -v }
         alerts.each do |key, count|
-          Lita.logger.debug "Counted #{count}: #{key}"
           replies += "Counted #{count}: #{key}\n"
         end
 
+        Lita.logger.debug replies
         response.reply "```#{replies}```"
       end
 
