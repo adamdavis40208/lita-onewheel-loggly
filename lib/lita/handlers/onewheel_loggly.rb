@@ -48,9 +48,8 @@ module Lita
         end
 
         Lita.logger.debug "#{events_count} events"
-        response.reply "#{events_count} events"
 
-        replies = ''
+        replies = "#{events_count} events\n"
         alerts = alerts.sort_by { |_k, v| -v }
         alerts.each do |key, count|
           Lita.logger.debug "Counted #{count}: #{key}"
