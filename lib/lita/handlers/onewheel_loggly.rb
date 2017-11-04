@@ -7,6 +7,7 @@ module Lita
       config :api_key, required: true
       config :base_uri, required: true
       config :query, required: true
+      config :requests_query, required: true
 
       route /^logs\s+([\w-]+)$/i, :logs, command: true
       route /^logs$/i, :logs, command: true
