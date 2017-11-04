@@ -63,8 +63,8 @@ module Lita
 
       def get_total_request_count(from_time)
         # Getting the total events count is a texas two-step...
-        query = '"translation--prod-" "request START"'
-        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=#{from_time}&until=now"
+
+        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape config.requests_query}&from=#{from_time}&until=now"
 
         rsid_response = call_loggly(uri)
         rsid = rsid_response['rsid']['id']
