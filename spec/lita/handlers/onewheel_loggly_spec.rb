@@ -39,6 +39,7 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
       config.handlers.onewheel_loggly.api_key = 'xyz'
       config.handlers.onewheel_loggly.base_uri = ''
       config.handlers.onewheel_loggly.query = ''
+      config.handlers.onewheel_loggly.requests_query = ''
     end
   end
 
