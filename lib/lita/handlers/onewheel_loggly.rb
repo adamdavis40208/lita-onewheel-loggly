@@ -15,21 +15,13 @@ module Lita
 
       def logs(response)
 
-        #   last_10_events_query = "/iterate?q=*&from=-10m&until=now&size=10"
+        from_time = get_from_time(response.matches[0][0])
 
-        from_time = '-10m'
-        if /\d+/.match response.matches[0][0]
-          Lita.logger.debug "Suspected time: #{response.matches[0][0]}"
-          from_time = response.matches[0][0]
-          unless from_time[0] == '-'
-            from_time = "-#{from_time}"
-          end
-        end
-
+        total_request_count = get_total_request_count(from_time)
 
         uri = get_pagination_uri(from_time, response)
-        resp = call_loggly(response, uri)
-        events = JSON.parse resp.body
+        events = call_loggly(uri)
+        # Todo: Capture that exception, print and return
 
         alerts = Hash.new { |h, k| h[k] = 0 }
         alerts = process_event(events, alerts)
@@ -38,9 +30,7 @@ module Lita
         Lita.logger.debug "events_count = #{events_count}"
 
         while events['next'] do
-          resp = call_loggly(response, events['next'])
-
-          events = JSON.parse resp.body
+          events = call_loggly(events['next'])
           events_count += events['events'].count
           Lita.logger.debug "events_count = #{events_count}"
 
@@ -49,7 +39,7 @@ module Lita
 
         Lita.logger.debug "#{events_count} events"
 
-        replies = "#{events_count} events\n\n"
+        replies = "#{total_request_count} requests\n#{events_count} events\n"
         alerts = alerts.sort_by { |_k, v| -v }
         alerts.each do |key, count|
           Lita.logger.debug "Counted #{count}: #{key}"
@@ -59,15 +49,40 @@ module Lita
         response.reply "```#{replies}```"
       end
 
-      def call_loggly(response, uri)
+      def get_from_time(from_time_param)
+        from_time = '-10m'
+        if /\d+/.match from_time_param
+          Lita.logger.debug "Suspected time: #{from_time_param}"
+          from_time = from_time_param
+          unless from_time[0] == '-'
+            from_time = "-#{from_time}"
+          end
+        end
+        from_time
+      end
+
+      def get_total_request_count(from_time)
+        # Getting the total events count is a texas two-step...
+        query = '"translation--prod-" "request START"'
+        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=#{from_time}&until=now"
+
+        rsid_response = call_loggly(uri)
+        rsid = rsid_response['rsid']['id']
+
+        events = call_loggly("http://lululemon.loggly.com/apiv2/events?rsid=#{rsid}")
+        events['total_events']
+      end
+
+      def call_loggly(uri)
         begin
           auth_header = {'Authorization': "bearer #{config.api_key}"}
           Lita.logger.debug uri
           resp = RestClient.get uri, auth_header
-        rescue Exception => timeout_exception
-          response.reply "Error: #{timeout_exception}"
+        rescue StandardError => timeout_exception
+          Lita.logger.debug "Error: #{timeout_exception}"
+          return timeout_exception
         end
-        resp
+        JSON.parse resp.body
       end
 
       def get_pagination_uri(from_time, response)
