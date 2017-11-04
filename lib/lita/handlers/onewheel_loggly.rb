@@ -72,6 +72,7 @@ module Lita
       end
 
       def get_pagination_uri(from_time, response)
+        Lits.logger.debug "Gathering `#{config.query}` events from #{from_time}..."
         response.reply "Gathering `#{config.query}` events from #{from_time}..."
         sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
         "#{config.base_uri}#{sample_query}"
