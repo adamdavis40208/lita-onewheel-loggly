@@ -280,11 +280,11 @@ module Lita
             salient = "Unhandled #{md[0]}"
             alerts[salient] += 1
           else
-            md = /(x-amzn-requestid=[\w-]+)/.match(message)
-            salient = message.gsub /\\n/, "\n"
-            Lita.logger.debug "UNKNOWN #{salient}"
-
-            alerts["Unknown #{md[0]}"] = 1
+            if md = /(x-amzn-requestid=[\w-]+)/.match(message)
+              salient = message.gsub /\\n/, "\n"
+              Lita.logger.debug "UNKNOWN #{salient}"
+              alerts["Unknown #{md[0]}"] = 1
+            end
           end
         end
         alerts
