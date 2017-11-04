@@ -14,7 +14,6 @@ module Lita
       route /^oneoffendeca$/i, :oneoff_endeca, command: true
 
       def logs(response)
-        auth_header = {'Authorization': "bearer #{config.api_key}"}
 
         #   last_10_events_query = "/iterate?q=*&from=-10m&until=now&size=10"
 
@@ -27,30 +26,24 @@ module Lita
           end
         end
 
-        response.reply "Gathering `#{config.query}` events from #{from_time}..."
-        sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
-        uri = "#{config.base_uri}#{sample_query}"
-        Lita.logger.debug uri
-        begin
-          resp = RestClient.get uri, auth_header
-        rescue Exception => timeout_exception
-          response.reply "Error: #{timeout_exception}"
-          return
-        end
+
+        uri = get_pagination_uri(from_time, response)
+        resp = call_loggly(response, uri)
+        events = JSON.parse resp.body
 
         alerts = Hash.new { |h, k| h[k] = 0 }
-
-        events = JSON.parse resp.body
         alerts = process_event(events, alerts)
+
         events_count = events['events'].count
         Lita.logger.debug "events_count = #{events_count}"
 
         while events['next'] do
-          Lita.logger.debug "Getting next #{events['next']}"
-          resp = RestClient.get events['next'], auth_header
+          resp = call_loggly(response, events['next'])
+
           events = JSON.parse resp.body
           events_count += events['events'].count
           Lita.logger.debug "events_count = #{events_count}"
+
           alerts = process_event(events, alerts)
         end
 
@@ -65,6 +58,23 @@ module Lita
         end
 
         response.reply "```#{replies}```"
+      end
+
+      def call_loggly(response, uri)
+        begin
+          auth_header = {'Authorization': "bearer #{config.api_key}"}
+          Lita.logger.debug uri
+          resp = RestClient.get uri, auth_header
+        rescue Exception => timeout_exception
+          response.reply "Error: #{timeout_exception}"
+        end
+        resp
+      end
+
+      def get_pagination_uri(from_time, response)
+        response.reply "Gathering `#{config.query}` events from #{from_time}..."
+        sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
+        "#{config.base_uri}#{sample_query}"
       end
 
       def oneoff(response)

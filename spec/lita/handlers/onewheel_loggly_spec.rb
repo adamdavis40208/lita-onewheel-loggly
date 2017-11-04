@@ -46,6 +46,6 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_it_up('oneoff_fixture')
 
     send_command 'oneoff'
-    expect(replies.last).to include('Counted 23: fault=call.atg.resp')
+    expect(replies.last).to include('oneoff_report.csv created.')
   end
 end
