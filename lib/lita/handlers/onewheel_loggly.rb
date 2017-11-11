@@ -13,6 +13,38 @@ module Lita
       route /^logs$/i, :logs, command: true
       route /^oneoff$/i, :oneoff, command: true
       route /^oneoffendeca$/i, :oneoff_endeca, command: true
+      route /^rollup\s+([\w=.-]+)\s*([\w=-]*)$/i, :rollup, command:true
+
+      # Run a query through loggly
+      # Group logs by req_url, return counts
+      def rollup(response)
+
+        # Run query through loggly
+        from_time = get_from_time(response.matches[0][1])
+        uri = get_pagination_uri(from_time, response, response.matches[0][0])
+        events = call_loggly(uri)
+        counts_by_url_total = {}
+
+        loop do #run at least once
+          # roll up this page of events by URL
+          counts_by_url_this_loop = rollup_events(events)
+          # copy totals of this event into master hash
+          counts_by_url_total = merge_hash_with_counts(counts_by_url_total, counts_by_url_this_loop)
+          Lita.logger.debug "totals_count = #{counts_by_url_total.length}"
+          Lita.logger.debug "events_count = #{counts_by_url_this_loop.length}"
+          break if events['next'] == nil
+          events = call_loggly(events['next'])
+        end
+
+        replies = "#URLs with errors\n\n"
+        counts_by_url_total = counts_by_url_total.sort_by { |_k, v| -v }
+        counts_by_url_total.each do |key, count|
+          replies += "Counted #{count}: #{key}\n"
+        end
+
+        Lita.logger.debug replies
+        response.reply "```#{replies}```"
+      end
 
       def logs(response)
 
@@ -88,9 +120,10 @@ module Lita
         JSON.parse resp.body
       end
 
-      def get_pagination_uri(from_time, response)
-        response.reply "Gathering `#{config.query}` events from #{from_time}..."
-        sample_query = "/iterate?q=#{CGI::escape config.query}&from=#{from_time}&until=&size=1000"
+      def get_pagination_uri(from_time, response, query=nil)
+        query_term = if query == nil then config.query else query end
+        response.reply "Gathering `#{query_term}` events from #{from_time}..."
+        sample_query = "/iterate?q=#{CGI::escape query_term}&from=#{from_time}&until=&size=1000"
         "#{config.base_uri}#{sample_query}"
       end
 
@@ -227,6 +260,44 @@ module Lita
 
         file.close
         response.reply "oneoff_endeca_report.csv created."
+      end
+
+      def rollup_events(events)
+        event_counts = {}
+        events['events'].each do |event|
+          msg = JSON.parse(event['logmsg'])
+          message = msg['message']
+          # cut out req_url
+          if message.include? "req_url"
+            start = message.index("req_url=") + 8
+            the_end = message.index(',', start)
+            url = message[start..the_end]
+            # strip off QPs
+            if url.include? '?'
+              url = url[0..url.index('?')-1]
+            end
+            # Add url or increment count for this url
+            if event_counts.key?(url)
+              event_counts[url] = event_counts[url]+1
+            else
+              event_counts[url] = 1
+            end
+          end
+        end
+        event_counts
+      end
+
+      # hashes have count/url.
+      # merge hashes and update the count if URLs match
+      def merge_hash_with_counts(hash_total, hash_event)
+        hash_event.each do |key, value|
+          if hash_total.key?(key)
+            hash_total[key] = hash_event[key] + hash_total[key]
+          else
+            hash_total[key] = hash_event[key]
+          end
+        end
+        hash_total
       end
 
       def process_event(events, alerts)
