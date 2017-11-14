@@ -20,7 +20,6 @@ end
 def mock_rollup_command
   mock_main_logs_command
   mock_it_up('mock_result', "https://lululemon.loggly.com/apiv2/events/iterate?q=fault%3Dstuffystuff&from=-10m&until=&size=1000")
-
 end
 
 describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
@@ -41,7 +40,7 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_main_logs_command
 
     send_command 'logs 10m'
-    expect(replies.last).to include('Counted 23: fault=call.atg.resp')
+    expect(replies.last).to include('Counted 23 (0.043%): fault=call.atg.resp')
   end
 
   it 'gets the oneoff report' do

@@ -13,7 +13,7 @@ module Lita
       route /^logs$/i, :logs, command: true
       route /^oneoff$/i, :oneoff, command: true
       route /^oneoffendeca$/i, :oneoff_endeca, command: true
-      route /^rollup\s+([\w=.-]+)\s*([\w=-]*)$/i, :rollup, command:true
+      route /^rollup\s+([\w=.-]+)\s*([-0-9smhd]*)$/i, :rollup, command:true
 
       # Run a query through loggly
       # Group logs by req_url, return counts
@@ -32,7 +32,7 @@ module Lita
           counts_by_url_total = merge_hash_with_counts(counts_by_url_total, counts_by_url_this_loop)
           Lita.logger.debug "totals_count = #{counts_by_url_total.length}"
           Lita.logger.debug "events_count = #{counts_by_url_this_loop.length}"
-          break if events['next'] == nil
+          break if events['next'].nil?
           events = call_loggly(events['next'])
         end
 
@@ -72,15 +72,20 @@ module Lita
 
         Lita.logger.debug "#{events_count} events"
 
-        events_as_percentage = ((events_count.to_f / total_request_count) * 100).round(3)
+        events_as_percentage = get_percentage_of_requests(events_count, total_request_count)
         replies = "#{total_request_count} requests\n#{events_count} events (#{events_as_percentage}%)\n\n"
         alerts = alerts.sort_by { |_k, v| -v }
         alerts.each do |key, count|
-          replies += "Counted #{count}: #{key}\n"
+          event_percent = get_percentage_of_requests(count, total_request_count)
+          replies += "Counted #{count} (#{event_percent}%): #{key}\n"
         end
 
         Lita.logger.debug replies
         response.reply "```#{replies}```"
+      end
+
+      def get_percentage_of_requests(events_count, total_request_count)
+        ((events_count.to_f / total_request_count) * 100).round(3)
       end
 
       def get_from_time(from_time_param)
@@ -121,7 +126,7 @@ module Lita
       end
 
       def get_pagination_uri(from_time, response, query=nil)
-        query_term = if query == nil then config.query else query end
+        query_term = query.nil?? config.query : query
         response.reply "Gathering `#{query_term}` events from #{from_time}..."
         sample_query = "/iterate?q=#{CGI::escape query_term}&from=#{from_time}&until=&size=1000"
         "#{config.base_uri}#{sample_query}"
@@ -268,8 +273,8 @@ module Lita
           msg = JSON.parse(event['logmsg'])
           message = msg['message']
           # cut out req_url
-          if message.include? "req_url"
-            start = message.index("req_url=") + 8
+          if message.include? 'req_url'
+            start = message.index('req_url=') + 8
             the_end = message.index(',', start)
             url = message[start..the_end]
             # strip off QPs
