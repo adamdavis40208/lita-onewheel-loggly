@@ -21,7 +21,8 @@ module Lita
 
         # Run query through loggly
         from_time = get_from_time(response.matches[0][1])
-        uri = get_pagination_uri(from_time, response, response.matches[0][0])
+        query = "\"translation--prod\" \"#{response.matches[0][0]}\""
+        uri = get_pagination_uri(from_time, response, query)
         events = call_loggly(uri)
         counts_by_url_total = {}
 

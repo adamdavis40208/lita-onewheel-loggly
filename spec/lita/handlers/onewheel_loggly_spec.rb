@@ -19,7 +19,7 @@ end
 
 def mock_rollup_command
   mock_main_logs_command
-  mock_it_up('mock_result', "https://lululemon.loggly.com/apiv2/events/iterate?q=fault%3Dstuffystuff&from=-10m&until=&size=1000")
+  mock_it_up('mock_result', "https://lululemon.loggly.com/apiv2/events/iterate?q=%22translation--prod%22+%22fault%3Dstuffystuff%22&from=-10m&until=&size=1000")
 end
 
 describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
