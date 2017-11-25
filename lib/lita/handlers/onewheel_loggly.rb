@@ -283,7 +283,7 @@ module Lita
       def hourly_oneoff(response)
         auth_header = { 'Authorization': "bearer #{config.api_key}" }
 
-        query = '"translation--prod" "About to make to Endeca" "Nrpp 9"'
+        query = '"translation--prod" "About to make to Endeca"'
         uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=-10m&until=now"
 
         rsid_response = call_loggly(uri)
