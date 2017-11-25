@@ -13,7 +13,8 @@ module Lita
       route /^logs$/i, :logs, command: true
       route /^oneoff$/i, :oneoff, command: true
       route /^oneoffendeca$/i, :oneoff_endeca, command: true
-      route /^rollup\s+([\w=.-]+)\s*([-0-9smhd]*)$/i, :rollup, command:true
+      route /^rollup\s+([\w=.-]+)\s*([-0-9smhd]*)$/i, :rollup, command: true
+      route /^hourlyoneoff$/i, :hourly_oneoff, command: true
 
       # Run a query through loggly
       # Group logs by req_url, return counts
