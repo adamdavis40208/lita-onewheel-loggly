@@ -279,52 +279,61 @@ module Lita
       # nrpp=6 :    24,224 (Loggly: `"translation--prod" "About to make to Endeca" "'Nrpp': 6"`)
       # nrpp=4 : 1,085,459 (Loggly: `"translation--prod" "About to make to Endeca" "'Nrpp': 4"`)```
       def hourly_oneoff(response)
-        auth_header = {'Authorization': "bearer #{config.api_key}"}
+        auth_header = { 'Authorization': "bearer #{config.api_key}" }
 
-        query = '"translation--prod" "About to make to Endeca" "\'Nrpp\': 9"'
-        sample_query = "/iterate?q=#{CGI::escape query}&from=-3h&until=-2hsize=1000"
-        uri = "#{config.base_uri}#{sample_query}"
-        Lita.logger.debug uri
+        query = '"translation--prod" "About to make to Endeca" "Nrpp 9"'
+        uri = "http://lululemon.loggly.com/apiv2/search?q=#{query}&from=-10m&until=now"
 
-        begin
-          resp = RestClient.get uri, auth_header
-        rescue Exception => timeout_exception
-          response.reply "Error: #{timeout_exception}"
-          return
-        end
+        rsid_response = call_loggly(uri)
+        rsid = rsid_response['rsid']['id']
 
-        alerts = Hash.new { |h, k| h[k] = 0 }
+        events = call_loggly("http://lululemon.loggly.com/apiv2/events?rsid=#{rsid}")
+        Lita.logger.debug "Total requests count: #{events['total_events']}"
+        response.reply events['total_events'] + ' Events'
 
-        master_events = []
-        events = JSON.parse resp.body
-        # alerts = process_event(events, alerts)
-        events_count = events['events'].count
-        Lita.logger.debug "events_count = #{events_count}"
+        # sample_query = "/iterate?q=#{CGI::escape query}&from=-3h&until=-2hsize=1000"
+        # uri = "#{config.base_uri}#{sample_query}"
+        # Lita.logger.debug uri
+        #
+        # begin
+        #   resp = RestClient.get uri, auth_header
+        # rescue Exception => timeout_exception
+        #   response.reply "Error: #{timeout_exception}"
+        #   return
+        # end
 
-        events['events'].each do |eve|
-          master_events.push eve['event']['json']['message']
-        end
+        # alerts = Hash.new { |h, k| h[k] = 0 }
+        #
+        # master_events = []
+        # events = JSON.parse resp.body
+        # # alerts = process_event(events, alerts)
+        # events_count = events['events'].count
+        # Lita.logger.debug "events_count = #{events_count}"
 
-        while events['next'] do
-          Lita.logger.debug "Getting next #{events['next']}"
-          resp = RestClient.get events['next'], auth_header
-          events = JSON.parse resp.body
-          events['events'].each do |eve|
-            master_events.push eve['event']['json']['message']
-          end
-          # alerts = process_event(events, alerts)
-        end
+        # events['events'].each do |eve|
+        #   master_events.push eve['event']['json']['message']
+        # end
+        #
+        # while events['next'] do
+        #   Lita.logger.debug "Getting next #{events['next']}"
+        #   resp = RestClient.get events['next'], auth_header
+        #   events = JSON.parse resp.body
+        #   events['events'].each do |eve|
+        #     master_events.push eve['event']['json']['message']
+        #   end
+        #   # alerts = process_event(events, alerts)
+        # end
 
-        Lita.logger.debug "#{events_count} events"
-        response.reply "#{events_count} events"
-        Lita.logger.debug "#{master_events.count} events"
-        response.reply "#{master_events.count} events"
+        # Lita.logger.debug "#{events_count} events"
+        # response.reply "#{events_count} events"
+        # Lita.logger.debug "#{master_events.count} events"
+        # response.reply "#{master_events.count} events"
 
         # url_list = []
         # master_events.each do |message|
         # end
 
-        response.reply "#{master_events.count} events counted"
+        # response.reply "#{master_events.count} events counted"
       end
 
       def rollup_events(events)
