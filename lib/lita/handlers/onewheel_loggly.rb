@@ -268,6 +268,64 @@ module Lita
         response.reply "oneoff_endeca_report.csv created."
       end
 
+      # So, anyone want to abuse Loggly into producing a report that gives these numbers but per hour?
+      #
+      # ```Calls from MT to BE;  Last 3 hrs (2017-11-24T12:23:23.071-08:00 to 2017-11-24T15:23:23.071-08:00)
+      # 3.3 MM total calls to BE  (Loggly: `"translation--prod" "About to make "`)
+      # 2.7 MM total calls (80% of total BE calls) from MT to Endeca (Loggly: `"translation--prod" "About to make to Endeca"`)
+      # 2.2 (80%) have nrpp URL param
+      # nrpp=9 :   995,513 (Loggly: `"translation--prod" "About to make to Endeca" "'Nrpp': 9"`)
+      # nrpp=6 :    24,224 (Loggly: `"translation--prod" "About to make to Endeca" "'Nrpp': 6"`)
+      # nrpp=4 : 1,085,459 (Loggly: `"translation--prod" "About to make to Endeca" "'Nrpp': 4"`)```
+      def hourly_oneoff(response)
+        auth_header = {'Authorization': "bearer #{config.api_key}"}
+
+        query = '"translation--prod" "About to make to Endeca" "\'Nrpp\': 9"'
+        sample_query = "/iterate?q=#{CGI::escape query}&from=-3h&until=-2hsize=1000"
+        uri = "#{config.base_uri}#{sample_query}"
+        Lita.logger.debug uri
+
+        begin
+          resp = RestClient.get uri, auth_header
+        rescue Exception => timeout_exception
+          response.reply "Error: #{timeout_exception}"
+          return
+        end
+
+        alerts = Hash.new { |h, k| h[k] = 0 }
+
+        master_events = []
+        events = JSON.parse resp.body
+        # alerts = process_event(events, alerts)
+        events_count = events['events'].count
+        Lita.logger.debug "events_count = #{events_count}"
+
+        events['events'].each do |eve|
+          master_events.push eve['event']['json']['message']
+        end
+
+        while events['next'] do
+          Lita.logger.debug "Getting next #{events['next']}"
+          resp = RestClient.get events['next'], auth_header
+          events = JSON.parse resp.body
+          events['events'].each do |eve|
+            master_events.push eve['event']['json']['message']
+          end
+          # alerts = process_event(events, alerts)
+        end
+
+        Lita.logger.debug "#{events_count} events"
+        response.reply "#{events_count} events"
+        Lita.logger.debug "#{master_events.count} events"
+        response.reply "#{master_events.count} events"
+
+        # url_list = []
+        # master_events.each do |message|
+        # end
+
+        response.reply "#{master_events.count} events counted"
+      end
+
       def rollup_events(events)
         event_counts = {}
         events['events'].each do |event|
