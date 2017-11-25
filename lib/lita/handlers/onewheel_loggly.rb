@@ -284,7 +284,7 @@ module Lita
         auth_header = { 'Authorization': "bearer #{config.api_key}" }
 
         query = '"translation--prod" "About to make to Endeca" "Nrpp 9"'
-        uri = "http://lululemon.loggly.com/apiv2/search?q=#{query}&from=-10m&until=now"
+        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=-10m&until=now"
 
         rsid_response = call_loggly(uri)
         rsid = rsid_response['rsid']['id']
