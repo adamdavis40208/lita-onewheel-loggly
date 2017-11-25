@@ -15,6 +15,8 @@ module Lita
       route /^oneoffendeca$/i, :oneoff_endeca, command: true
       route /^rollup\s+([\w=.-]+)\s*([-0-9smhd]*)$/i, :rollup, command: true
       route /^hourlyoneoff$/i, :hourly_oneoff, command: true
+      route /^hourlyrollup$/i, :hourly_oneoff, command: true
+      route /^hourlyrunoff$/i, :hourly_oneoff, command: true
 
       # Run a query through loggly
       # Group logs by req_url, return counts
@@ -289,7 +291,7 @@ module Lita
 
         events = call_loggly("http://lululemon.loggly.com/apiv2/events?rsid=#{rsid}")
         Lita.logger.debug "Total requests count: #{events['total_events']}"
-        response.reply events['total_events'] + ' Events'
+        response.reply events['total_events'].to_s + ' Events'
 
         # sample_query = "/iterate?q=#{CGI::escape query}&from=-3h&until=-2hsize=1000"
         # uri = "#{config.base_uri}#{sample_query}"
