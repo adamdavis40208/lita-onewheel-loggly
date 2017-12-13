@@ -40,12 +40,14 @@ module Lita
           events = call_loggly(events['next'])
         end
 
-        replies = "#URLs with errors\n\n"
+        replies = ''
         counts_by_url_total = counts_by_url_total.sort_by { |_k, v| -v }
-        counts_by_url_total.each do |key, count|
+        counts_by_url_total.each_with_index do |(key, count), index|
           replies += "Counted #{count}: #{key}\n"
+          break if index >= 10
         end
 
+        replies += "#{counts_by_url_total.count} unique URLs with errors."
         Lita.logger.debug replies
         response.reply "```#{replies}```"
       end
@@ -284,7 +286,7 @@ module Lita
         auth_header = { 'Authorization': "bearer #{config.api_key}" }
 
         query = '"translation--prod" "About to make to Endeca"'
-        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=-10m&until=now"
+        uri = "http://lululemon.loggly.com/apiv2/search?q=#{CGI::escape query}&from=-1h&until=now"
 
         rsid_response = call_loggly(uri)
         rsid = rsid_response['rsid']['id']
