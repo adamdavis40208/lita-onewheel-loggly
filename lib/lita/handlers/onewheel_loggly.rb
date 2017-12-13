@@ -40,7 +40,7 @@ module Lita
           events = call_loggly(events['next'])
         end
 
-        replies = 'Top 10 URLs by incidence count:\n'
+        replies = "Top 10 URLs by incidence count:\n"
         counts_by_url_total = counts_by_url_total.sort_by { |_k, v| -v }
         counts_by_url_total.each_with_index do |(key, count), index|
           replies += "Counted #{count}: #{key}\n"
