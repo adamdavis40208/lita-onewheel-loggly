@@ -167,7 +167,7 @@ module Lita
 
         while events['next'] do
           Lita.logger.debug "Getting next #{events['next']}"
-          resp = RestClient.get events['next'], auth_header
+          resp = get_events_from_loggly(auth_header, events)
           events = JSON.parse resp.body
           events['events'].each do |eve|
             master_events.push eve['event']['json']['message']
@@ -235,7 +235,7 @@ module Lita
 
         while events['next'] do
           Lita.logger.debug "Getting next #{events['next']}"
-          resp = RestClient.get events['next'], auth_header
+          resp = get_events_from_loggly(auth_header, events)
           events = JSON.parse resp.body
           events['events'].each do |eve|
             master_events.push eve['event']['json']['message']
@@ -271,6 +271,11 @@ module Lita
 
         file.close
         response.reply "oneoff_endeca_report.csv created."
+      end
+
+      def get_events_from_loggly(auth_header, events)
+        # TODO: Implement catch/retry on 502s.
+        RestClient.get events['next'], auth_header
       end
 
       # So, anyone want to abuse Loggly into producing a report that gives these numbers but per hour?
@@ -343,6 +348,8 @@ module Lita
       def rollup_events(events)
         event_counts = {}
         events['events'].each do |event|
+          # Let's see what we've got.
+          Lita.logger.debug event
           msg = JSON.parse(event['logmsg'])
           message = msg['message']
           # cut out req_url
@@ -380,6 +387,8 @@ module Lita
 
       def process_event(events, alerts)
         events['events'].each do |event|
+          # Let's a see a what a we a gotta
+          Lita.logger.debug event
           msg = JSON.parse event['logmsg']
           message = msg['message']
           if md = /(fault=[a-zA-Z0-9.-]+)/.match(message)
