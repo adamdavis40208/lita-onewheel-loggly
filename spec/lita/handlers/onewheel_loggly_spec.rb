@@ -69,5 +69,7 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
 
     send_command 'rollup fault=stuffystuff 10m'# fault=endeca_yo 10m'
     expect(replies.last).to include('Counted 23: https://shop.lululemon.com//llmapi/v1/order/additem')
+    expect(replies.last).to include('https://shop.lululemon.com/footer')
+    expect(replies.last).not_to include('https://shop.lululemon.com/footer,')
   end
 end

@@ -356,7 +356,7 @@ module Lita
           if message.include? 'req_url'
             start = message.index('req_url=') + 8
             the_end = message.index(',', start)
-            url = message[start..the_end]
+            url = message[start..the_end-1]
             # strip off QPs
             if url.include? '?'
               url = url[0..url.index('?')-1]
