@@ -30,7 +30,6 @@ module Lita
         counts_by_url_total = {}
 
         loop do #run at least once
-          # roll up this page of events by URL
           counts_by_url_this_loop = rollup_events(events)
           # copy totals of this event into master hash
           counts_by_url_total = merge_hash_with_counts(counts_by_url_total, counts_by_url_this_loop)
@@ -351,12 +350,8 @@ module Lita
           # Let's see what we've got.
           Lita.logger.debug event
           msg = JSON.parse(event['logmsg'])
-          message = msg['message']
-          # cut out req_url
-          if message.include? 'req_url'
-            start = message.index('req_url=') + 8
-            the_end = message.index(',', start)
-            url = message[start..the_end]
+          if event.key? 'event' and event['event'].key? 'json' and event['event']['json'].key? 'req_url'
+            url = event['event']['json']['req_url']
             # strip off QPs
             if url.include? '?'
               url = url[0..url.index('?')-1]
@@ -389,60 +384,9 @@ module Lita
         events['events'].each do |event|
           # Let's a see a what a we a gotta
           Lita.logger.debug event
-          msg = JSON.parse event['logmsg']
-          message = msg['message']
-          if md = /(fault=[a-zA-Z0-9.-]+)/.match(message)
-            alerts[md[0]] += 1
-          elsif /KeyError/.match(message)
-            idx = message.index('KeyError')
-            salient = message[idx - 120, 150]
-            salient.gsub! /\\n - \w+/, ''
-            alerts[salient] += 1
-          elsif /IndexError/.match(message)
-            idx = message.index('IndexError')
-            salient = message[idx - 120, 150]
-            alerts[salient] += 1
-          elsif /NoneType/.match(message)
-            idx = message.index('NoneType')
-            salient = message[idx - 120, 150]
-            alerts[salient] += 1
-          elsif /SSLError/.match(message)
-            idx = message.index('SSLError')
-            salient = message[idx - 120, 170]
-            alerts[salient] += 1
-          elsif md = /(socket\.timeout: The read operation timed out)/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(urllib3\.exceptions\.ProtocolError: \('Connection aborted\.', ConnectionResetError\(104, 'Connection reset by peer'\)\))/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(http\.client\.RemoteDisconnected: Remote end closed connection without response)/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(Could not extract locale from UsrLocale cookie. We got .* as UsrLocale cookie.)/.match(message)
-            salient = md[0]
-            alerts[salient] += 1
-          elsif md = /(requests.exceptions.TooManyRedirects: Exceeded 30 redirects.)/.match(message)
-            salient = md[0]
-            alerts[salient] += 1
-          elsif md = /(raise JSONDecodeError\("Expecting value", s, err.value\) from None)/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(Got a cookie string but could not extract cookies.)/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(requests.exceptions.ConnectTimeout.*Connection to shop.lululemon.com timed out.)/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          elsif md = /(requests.exceptions.ReadTimeout.*read timeout=\d+\))/.match(message)
-            salient = "Unhandled #{md[0]}"
-            alerts[salient] += 1
-          else
-            if md = /(x-amzn-requestid=[\w-]+)/.match(message)
-              salient = message.gsub /\\n/, "\n"
-              Lita.logger.debug "UNKNOWN #{salient}"
-              alerts["Unknown #{md[0]}"] = 1
-            end
+          if event.key? 'event' and event['event'].key? 'json' and event['event']['json'].key? 'fault'
+            fault_name = event['event']['json']['fault']
+            alerts[fault_name] += 1
           end
         end
         alerts

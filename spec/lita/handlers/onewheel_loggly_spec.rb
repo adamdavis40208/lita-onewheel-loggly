@@ -13,13 +13,13 @@ end
 def mock_main_logs_command
   mock_it_up('total_requests', "http://lululemon.loggly.com/apiv2/search?q=requests_query&from=-10m&until=now")
   mock_it_up('rsid', "http://lululemon.loggly.com/apiv2/events?rsid=86162304")
-  mock_it_up('mock_result', "https://lululemon.loggly.com/apiv2/events/iterate?q=main_query&from=-10m&until=&size=1000")
+  mock_it_up('mock_result_json', "https://lululemon.loggly.com/apiv2/events/iterate?q=main_query&from=-10m&until=&size=1000")
   mock_it_up('mock_next_result', 'https://lululemon.loggly.com/apiv2/events/iterate?next=9cb4b38a-37d7-43d3-ad79-063cf2d1c43c')
 end
 
 def mock_rollup_command
   mock_main_logs_command
-  mock_it_up('mock_result', "https://lululemon.loggly.com/apiv2/events/iterate?q=%22translation--prod%22+%22fault%3Dstuffystuff%22&from=-10m&until=&size=1000")
+  mock_it_up('mock_result_json', "https://lululemon.loggly.com/apiv2/events/iterate?q=%22translation--prod%22+%22fault%3Dstuffystuff%22&from=-10m&until=&size=1000")
 end
 
 describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
@@ -40,7 +40,7 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_main_logs_command
 
     send_command 'logs 10m'
-    expect(replies.last).to include('Counted 23 (0.043%): fault=call.atg.resp')
+    expect(replies.last).to include('Counted 20 (0.038%): call.timeout')
   end
 
   it 'gets the oneoff report' do
@@ -68,6 +68,6 @@ describe Lita::Handlers::OnewheelLoggly, lita_handler: true do
     mock_rollup_command
 
     send_command 'rollup fault=stuffystuff 10m'# fault=endeca_yo 10m'
-    expect(replies.last).to include('Counted 23: https://shop.lululemon.com//llmapi/v1/order/additem')
+    expect(replies.last).to include('Counted 4: https://ecom-mock-atg.lllapi.vision/p/women-shorts/Run-Speed-Short-32138-MD/_/prod3860019')
   end
 end
